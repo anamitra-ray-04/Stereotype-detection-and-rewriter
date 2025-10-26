@@ -50,9 +50,9 @@ A sophisticated system that combines Large Language Models (LLM) and Machine Lea
    ```
 
 3. Set up environment variables in `.env`:
-   ```
-   GROQ_API_KEY=your_groq_api_key
-   ```
+```text
+GROQ_API_KEY=your_groq_api_key
+```
 
 4. Run the application:
    ```bash
@@ -64,28 +64,32 @@ A sophisticated system that combines Large Language Models (LLM) and Machine Lea
 1. Launch the Streamlit interface
 2. Enter text in the input area
 3. Click "Analyze and Rewrite"
-4. View results from both models:
+4. View results from different models:
    - LLM Analysis with severity scores and explanations
    - Logistic Regression probabilities and confidence
+   - BERT probabilities and confidence
 5. If stereotypes are detected, view the bias-free rewritten version
 
 ## Project Structure
 
 ```
 stereotype-detection-and-rewriter/
-├── app.py                  # Streamlit interface
-├── detector.py            # Core detection and rewriting logic
-├── requirements.txt       # Project dependencies
-├── model-log-reg.pkl     # Trained logistic regression model
-└── vectorizer-log-reg.pkl # Text vectorizer for ML model
+├── app.py                     # Streamlit interface (UI)
+├── detector.py                # Core detection & rewriting logic (LLM, logreg, BERT)
+├── requirements.txt           # Project dependencies (BERT extras appended)
+├── model-log-reg.pkl          # Trained logistic regression model (binary classifier)
+├── vectorizer-log-reg.pkl     # Text vectorizer used by logistic regression
+├── transformers/              # Local transformers model files (tokenizer/model) 
+└── README.md                  # This file
 ```
 
 ## Requirements
 
 - Python 3.8+
 - Streamlit
-- Python-dotenv
-- Requests
-- Scikit-learn
-- Joblib
-- Groq API access
+- python-dotenv
+- requests
+- scikit-learn
+- joblib
+- Groq API access (set `GROQ_API_KEY` in `.env`)
+- Optional for BERT: `transformers`, `safetensors`, `torch`
