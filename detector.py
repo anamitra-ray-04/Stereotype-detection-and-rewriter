@@ -5,6 +5,10 @@ import requests
 import os
 import joblib
 
+# Optional: transformers-based BERT pipeline will be loaded if the package
+# and local model files exist. Loading is guarded so missing package/model
+# does not break existing functionality.
+
 class StereotypeDetector:
     def __init__(self, api_key: str):
         """
@@ -32,6 +36,31 @@ class StereotypeDetector:
             print(f"Warning: Could not load logistic regression model: {str(e)}")
             self.log_reg_model = None
             self.vectorizer = None
+
+        # Try to load local transformers model (BERT) from ./transformers
+        self.bert_pipeline = None
+        try:
+            # Import inside try so missing package won't break the app
+            from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
+
+            model_dir = os.path.join(os.path.dirname(__file__), "transformers")
+
+            # Use from_pretrained with the local directory. If files are present
+            # this should load the tokenizer and model.
+            tokenizer = AutoTokenizer.from_pretrained(model_dir)
+            model = AutoModelForSequenceClassification.from_pretrained(model_dir)
+
+            # Create a text-classification pipeline. device=-1 forces CPU usage
+            self.bert_pipeline = pipeline(
+                "text-classification",
+                model=model,
+                tokenizer=tokenizer,
+                device=-1
+            )
+        except Exception as e:
+            # Keep behavior non-breaking: log warning and leave bert_pipeline as None
+            print(f"Warning: Could not load BERT model or transformers package: {str(e)}")
+            self.bert_pipeline = None
 
     def detect_stereotype(self, text: str) -> Dict[str, Any]:
         """
@@ -149,6 +178,76 @@ class StereotypeDetector:
                 "success": False,
                 "error": str(e)
             }
+
+    def predict_with_bert(self, text: str) -> Dict[str, Any]:
+        """
+        Predict stereotype using the local transformers (BERT) model.
+
+        This method is optional: if the transformers package or model files
+        aren't available, it returns success=False with an error message.
+        The returned structure mirrors `predict_with_logreg` where possible.
+        """
+        if self.bert_pipeline is None:
+            return {
+                "success": False,
+                "error": "BERT model not loaded"
+            }
+
+        try:
+            # Request all class scores so we can map probabilities consistently
+            raw = self.bert_pipeline(text, truncation=True, return_all_scores=True)
+
+            # raw is typically a list with one element (for the input string)
+            if isinstance(raw, list) and len(raw) > 0:
+                scores_list = raw[0]
+            else:
+                scores_list = raw
+
+            # scores_list is expected to be a list of dicts: [{"label":..., "score":...}, ...]
+            # Try to order by numeric label index if labels are like LABEL_0, LABEL_1
+            try:
+                ordered = sorted(
+                    scores_list,
+                    key=lambda x: int(''.join(filter(str.isdigit, x.get('label', '0'))))
+                )
+                probabilities = [float(item.get('score', 0.0)) for item in ordered]
+            except Exception:
+                # Fallback: use given order
+                probabilities = [float(item.get('score', 0.0)) for item in scores_list]
+
+            # If binary, assume index 0 -> no_stereotype, index 1 -> stereotype
+            if len(probabilities) == 2:
+                no_st_prob = probabilities[0]
+                st_prob = probabilities[1]
+                prediction = 1 if st_prob > no_st_prob else 0
+                confidence = max(no_st_prob, st_prob)
+
+                return {
+                    "success": True,
+                    "has_stereotype": bool(prediction),
+                    "prediction": int(prediction),
+                    "confidence": float(confidence),
+                    "probabilities": {
+                        "no_stereotype": float(no_st_prob),
+                        "stereotype": float(st_prob)
+                    }
+                }
+
+            # Non-binary or unexpected output: return generic probability list
+            pred_idx = int(max(range(len(probabilities)), key=lambda i: probabilities[i]))
+            confidence = float(max(probabilities))
+            return {
+                "success": True,
+                "has_stereotype": bool(pred_idx == 1),
+                "prediction": pred_idx,
+                "confidence": confidence,
+                "probabilities": {
+                    "class_probabilities": probabilities
+                }
+            }
+
+        except Exception as e:
+            return {"success": False, "error": str(e)}
     
     def rewrite_text(self, text: str) -> str:
         """
