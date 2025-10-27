@@ -6,8 +6,7 @@ A sophisticated system that combines Large Language Models (LLM) and Machine Lea
 
 1. **Input Collection**
    - Text input
-   - File upload
-   - Web scraping
+   - Training data collected from well-known datasets
 
 2. **Preprocessing**
    - Text cleaning and normalization
@@ -19,7 +18,8 @@ A sophisticated system that combines Large Language Models (LLM) and Machine Lea
 3. **Stereotype Detection**
    - Hybrid approach using BERT, Logistic Regression and LLM models
    - Multi-type stereotype identification
-   - Severity scoring (0-1 scale)
+   - Severity scoring (0-1 scale) for LLM
+   - Confidence (or probability) for ML / DL models
    - Detailed analysis and explanation
    - Stereotype type classification
 
