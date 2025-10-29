@@ -36,7 +36,7 @@ A sophisticated system that combines Large Language Models (LLM) and Machine Lea
    - Side-by-side model comparisons
 
 ## Workflow
-![Uploading image.png…]()
+<img width="1688" height="3604" alt="image" src="https://github.com/user-attachments/assets/b4236d27-3df9-4588-aece-709a5e318379" />
 
 ## Setup
 
