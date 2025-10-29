@@ -35,6 +35,9 @@ A sophisticated system that combines Large Language Models (LLM) and Machine Lea
    - Clear visualization of results
    - Side-by-side model comparisons
 
+## Workflow
+![Uploading image.png…]()
+
 ## Setup
 
 1. Create and activate a virtual environment:
